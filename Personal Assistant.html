@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personal Assistant</title>
+  <style>
+    :root{
+      --bg: #0b0f14;
+      --panel: #111827;
+      --panel-2: #0f172a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6; /* blue-500 */
+      --accent-600: #2563eb; /* blue-600 */
+      --danger: #ef4444;
+      --user: #1f2937; /* slate-800 */
+      --assistant: #0b3a87; /* darker blue bubble */
+      --radius: 12px;
+      --shadow: 0 10px 25px rgba(0,0,0,0.35);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: radial-gradient(1000px 600px at 100% -10%, rgba(59,130,246,0.08), rgba(0,0,0,0)) no-repeat, var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.4;
+      margin: 0;
+    }
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 16px;
+      backdrop-filter: blur(6px);
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-600));
+      box-shadow: 0 6px 20px rgba(59,130,246,0.35);
+    }
+    .title { font-weight: 800; letter-spacing: 0.3px; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+    .quick-actions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .qa-btn {
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .qa-btn:hover { transform: translateY(-1px); border-color: rgba(59,130,246,0.3); }
+    .qa-btn:active { transform: translateY(0); }
+
+    .chat {
+      display: grid;
+      grid-template-rows: 1fr;
+      gap: 12px;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+    }
+    .messages {
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 6px;
+    }
+    .msg-row {
+      display: flex;
+      gap: 8px;
+    }
+    .msg-row.user { justify-content: flex-end; }
+    .msg-row.assistant { justify-content: flex-start; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 999px; flex: 0 0 auto; margin-top: 2px;
+      background: #0b2447;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid; place-items: center;
+      font-size: 0.75rem; color: #93c5fd;
+    }
+    .avatar.user { background: #1f2937; color: #cbd5e1; }
+    .bubble {
+      max-width: min(80%, 680px);
+      padding: 10px 12px;
+      border-radius: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+    }
+    .bubble.user {
+      background: var(--user);
+      border-top-right-radius: 4px;
+    }
+    .bubble.assistant {
+      background: linear-gradient(180deg, rgba(37,99,235,0.22), rgba(37,99,235,0.12));
+      border-top-left-radius: 4px;
+    }
+    .timestamp { color: var(--muted); font-size: 0.7rem; margin-top: 4px; }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+      position: sticky; bottom: 0;
+    }
+    .input {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 12px 12px;
+      outline: none;
+      font-size: 1rem;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(180deg, var(--accent), var(--accent-600));
+      box-shadow: 0 6px 16px rgba(59,130,246,0.35);
+      transition: transform 0.08s ease, filter 0.2s ease;
+    }
+    .btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn.secondary {
+      background: #0f172a;
+      box-shadow: none;
+    }
+    .btn[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .mic-recording {
+      animation: pulse 1.4s infinite;
+      box-shadow: 0 0 0 0 rgba(59,130,246,0.8);
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59,130,246, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(59,130,246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246, 0); }
+    }
+
+    @media (max-width: 640px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .subtitle { display: none; }
+      .bubble { max-width: 90%; }
+      .composer { grid-template-columns: 1fr auto auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Personal assistant chat application">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="title">Personal Assistant</div>
+          <div class="subtitle">Voice-enabled helper with reminders</div>
+        </div>
+      </div>
+      <div class="quick-actions" aria-label="Quick actions">
+        <button class="qa-btn" data-msg="What time is it?">What time is it?</button>
+        <button class="qa-btn" data-msg="Show reminders">Show reminders</button>
+        <button class="qa-btn" data-msg="Add reminder: Buy milk at 5pm">Add reminder: Buy milk at 5pm</button>
+        <button class="qa-btn" data-msg="Add reminder: Call mom tomorrow">Add reminder: Call mom tomorrow</button>
+      </div>
+    </header>
+
+    <section class="chat" aria-label="Conversation history">
+      <div id="messages" class="messages"></div>
+    </section>
+
+    <section class="composer" aria-label="Message composer">
+      <input id="input" class="input" type="text" placeholder="Type a command (e.g., “Add reminder: …”) and press Enter..."
+             aria-label="Type your message" />
+      <button id="micBtn" class="btn secondary" aria-pressed="false" aria-label="Start voice input">🎤 Mic</button>
+      <button id="sendBtn" class="btn" aria-label="Send message">Send ➤</button>
+    </section>
+  </div>
+
+  <script>
+    // Configuration: set your backend URL (default: Flask on localhost:5000)
+    const API_BASE = '';
+
+    // DOM elements
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
+    const qaBtns = document.querySelectorAll('.qa-btn');
+
+    // Speech Synthesis setup
+    let voices = [];
+    function loadVoices() {
+      voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    }
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      // Choose an English voice if available
+      const enVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+      if (enVoice) utter.voice = enVoice;
+      utter.rate = 1.02;
+      utter.pitch = 1;
+      utter.volume = 1;
+      window.speechSynthesis.cancel(); // stop any ongoing speech
+      window.speechSynthesis.speak(utter);
+    }
+
+    // Chat rendering
+    function nowTime() {
+      const d = new Date();
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function addMessage(role, text) {
+      const row = document.createElement('div');
+      row.className = `msg-row ${role}`;
+      const avatar = document.createElement('div');
+      avatar.className = `avatar ${role}`;
+      avatar.textContent = role === 'assistant' ? 'AI' : 'You';
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${role}`;
+      bubble.textContent = text;
+      const timestamp = document.createElement('div');
+      timestamp.className = 'timestamp';
+      timestamp.textContent = nowTime();
+
+      if (role === 'assistant') {
+        row.appendChild(avatar);
+        const wrap = document.createElement('div');
+        wrap.appendChild(bubble);
+        wrap.appendChild(timestamp);
+        row.appendChild(wrap);
+      } else {
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.flexDirection = 'column';
+        wrap.style.alignItems = 'flex-end';
+        wrap.appendChild(bubble);
+        wrap.appendChild(timestamp);
+        row.appendChild(wrap);
+        row.appendChild(avatar);
+      }
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      if (role === 'assistant') {
+        speak(text);
+      }
+    }
+
+    // Initial assistant greeting
+    addMessage('assistant', "Hi! I’m your personal assistant. Try: “What time is it?”, “Show reminders”, or “Add reminder: …”");
+
+    // Sending logic
+    async function sendMessage(msg) {
+      if (!msg || !msg.trim()) return;
+      addMessage('user', msg);
+      inputEl.value = '';
+      setComposerEnabled(false);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/assistant`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || `Request failed (${res.status})`);
+        }
+        const data = await res.json();
+        addMessage('assistant', data.reply || '(no reply)');
+      } catch (err) {
+        console.error(err);
+        addMessage('assistant', `Sorry, I hit an error: ${err.message}`);
+      } finally {
+        setComposerEnabled(true);
+        inputEl.focus();
+      }
+    }
+
+    function setComposerEnabled(enabled) {
+      inputEl.disabled = !enabled;
+      sendBtn.disabled = !enabled;
+      micBtn.disabled = !enabled || !hasSpeechRecognition;
+    }
+
+    // Events
+    sendBtn.addEventListener('click', () => sendMessage(inputEl.value));
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage(inputEl.value);
+      }
+    });
+    qaBtns.forEach(btn => btn.addEventListener('click', () => sendMessage(btn.dataset.msg)));
+
+    // Speech Recognition (Web Speech API)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const hasSpeechRecognition = !!SpeechRecognition;
+    let recognizing = false;
+    let recognition;
+
+    function initRecognition() {
+      if (!hasSpeechRecognition) return;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        recognizing = true;
+        micBtn.classList.add('mic-recording');
+        micBtn.setAttribute('aria-pressed', 'true');
+        inputEl.placeholder = 'Listening...';
+      };
+      recognition.onend = () => {
+        recognizing = false;
+        micBtn.classList.remove('mic-recording');
+        micBtn.setAttribute('aria-pressed', 'false');
+        inputEl.placeholder = 'Type a command (e.g., “Add reminder: …”) and press Enter...';
+      };
+      recognition.onerror = (e) => {
+        recognizing = false;
+        micBtn.classList.remove('mic-recording');
+        console.warn('Speech recognition error:', e.error);
+      };
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          transcript += res[0].transcript;
+          if (res.isFinal) {
+            transcript = transcript.trim();
+            if (transcript) {
+              inputEl.value = transcript;
+              sendMessage(transcript);
+            }
+          }
+        }
+      };
+    }
+
+    if (hasSpeechRecognition) {
+      initRecognition();
+      micBtn.addEventListener('click', () => {
+        if (!recognition) return;
+        if (recognizing) {
+          recognition.stop();
+        } else {
+          try { recognition.start(); } catch {}
+        }
+      });
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = 'Speech recognition not supported in this browser';
+    }
+  </script>
+</body>
+</html>
